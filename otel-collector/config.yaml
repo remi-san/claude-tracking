@@ -1,0 +1,43 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  # Exposes metrics for Prometheus to scrape on :8889
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    # Keep metric names predictable (e.g. claude_code_cost_usage), no unit/_total suffixes
+    add_metric_suffixes: false
+    resource_to_telemetry_conversion:
+      enabled: true
+  # Loki 3 ingests OTLP natively
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+  otlp/tempo:
+    endpoint: tempo:4317
+    tls:
+      insecure: true
+  debug:
+    verbosity: basic
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki, debug]
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/tempo, debug]

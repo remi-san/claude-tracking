@@ -1,0 +1,414 @@
+{
+  "uid": "claude-code-cost-by-issue",
+  "title": "Claude Code cost by issue",
+  "schemaVersion": 39,
+  "editable": true,
+  "tags": [
+    "claude-code"
+  ],
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "",
+  "links": [
+    {
+      "title": "Claude Code usage",
+      "type": "link",
+      "url": "/d/claude-code-usage"
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Cost by issue",
+      "description": "Cost of each model call goes to the issue in the git branch it ran on: the first number in the branch name (123-fix, feat/123-foo, issue-123), or else the issue its pull request closes, recorded by hooks/record-branch.py. Main-thread calls use the session's branch at the end of the turn, or else the issue of the subagents the prompt works with; subagent calls use the branch checked out in the subagent's own worktree, matched by prompt and agent type. Calls on branches without a number are grouped with no issue per repository; calls from before the hook have no repository.",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 12
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (key, session_id) (sum_over_time({service_name=\"claude-code\"} | event_name=~\"(claude_code\\\\.)?api_request\" | label_format key=`{{ .prompt_id }}/{{ if .agent_name }}{{ .agent_name }}{{ else }}main{{ end }}` | unwrap cost_usd [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "legendFormat": "cost"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "last_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format issue_n=`{{ if .issue }}{{ .issue }}{{ else }}0{{ end }}` | unwrap issue_n [30d]) by (key, repo)",
+          "queryType": "instant",
+          "instant": true,
+          "legendFormat": "issue"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "key",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "type": "exclude",
+            "match": "any",
+            "filters": [
+              {
+                "fieldName": "Value #A",
+                "config": {
+                  "id": "isNull",
+                  "options": {}
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "repo": {
+                "operation": "groupby"
+              },
+              "Value #B": {
+                "operation": "groupby"
+              },
+              "Value #A": {
+                "operation": "aggregate",
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "session_id": {
+                "operation": "aggregate",
+                "aggregations": [
+                  "distinctCount"
+                ]
+              },
+              "key": {
+                "operation": "aggregate",
+                "aggregations": [
+                  "count"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "Value #B": 0,
+              "repo": 1,
+              "Value #A (sum)": 2,
+              "session_id (distinctCount)": 4,
+              "key (count)": 3
+            },
+            "renameByName": {
+              "Value #B": "Issue",
+              "repo": "Repository",
+              "Value #A (sum)": "Cost (USD)",
+              "session_id (distinctCount)": "Sessions",
+              "key (count)": "Prompt \u00d7 agent"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Cost (USD)",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Issue"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "prefix:#"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "noValue",
+                "value": "(no issue)"
+              },
+              {
+                "id": "custom.width",
+                "value": 140
+              },
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open issue on GitHub",
+                    "url": "https://github.com/${__data.fields.Repository}/issues/${__value.raw}",
+                    "targetBlank": true
+                  }
+                ]
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "(no issue)",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cost (USD)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 2
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Sessions by issue",
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 24,
+        "h": 12
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (key, session_id) (sum_over_time({service_name=\"claude-code\"} | event_name=~\"(claude_code\\\\.)?api_request\" | label_format key=`{{ .prompt_id }}/{{ if .agent_name }}{{ .agent_name }}{{ else }}main{{ end }}` | unwrap cost_usd [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "legendFormat": "cost"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "last_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format issue_n=`{{ if .issue }}{{ .issue }}{{ else }}0{{ end }}` | unwrap issue_n [30d]) by (key, repo)",
+          "queryType": "instant",
+          "instant": true,
+          "legendFormat": "issue"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "key",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "filterByValue",
+          "options": {
+            "type": "exclude",
+            "match": "any",
+            "filters": [
+              {
+                "fieldName": "Value #A",
+                "config": {
+                  "id": "isNull",
+                  "options": {}
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "groupBy",
+          "options": {
+            "fields": {
+              "session_id": {
+                "operation": "groupby"
+              },
+              "repo": {
+                "operation": "groupby"
+              },
+              "Value #B": {
+                "operation": "groupby"
+              },
+              "Value #A": {
+                "operation": "aggregate",
+                "aggregations": [
+                  "sum"
+                ]
+              },
+              "key": {
+                "operation": "aggregate",
+                "aggregations": [
+                  "count"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "indexByName": {
+              "session_id": 0,
+              "Value #B": 1,
+              "repo": 2,
+              "Value #A (sum)": 3,
+              "key (count)": 4
+            },
+            "renameByName": {
+              "session_id": "Session",
+              "Value #B": "Issue",
+              "repo": "Repository",
+              "Value #A (sum)": "Cost (USD)",
+              "key (count)": "Prompt \u00d7 agent"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Cost (USD)",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Issue"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "prefix:#"
+              },
+              {
+                "id": "decimals",
+                "value": 0
+              },
+              {
+                "id": "noValue",
+                "value": "(no issue)"
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "0": {
+                        "text": "(no issue)",
+                        "index": 0
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cost (USD)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 4
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "description": "A session that moved between issues has one row per issue."
+    }
+  ]
+}

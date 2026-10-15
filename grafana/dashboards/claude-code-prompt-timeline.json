@@ -1,0 +1,620 @@
+{
+  "uid": "claude-code-prompt-timeline",
+  "title": "Claude Code prompt timeline",
+  "schemaVersion": 39,
+  "editable": true,
+  "tags": [
+    "claude-code"
+  ],
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "",
+  "links": [
+    {
+      "title": "Claude Code usage",
+      "type": "link",
+      "url": "/d/claude-code-usage"
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "prompt_id",
+        "label": "Prompt id",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "table",
+      "title": "Recent prompts (click a prompt id)",
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 8
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "maxLines": 200,
+          "expr": "{service_name=\"claude-code\"} | event_name=~\"(claude_code\\\\.)?(user_prompt)\" | line_format \"{{.prompt}}\""
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "format": "json",
+            "replace": true,
+            "keepTime": true,
+            "jsonPaths": [
+              {
+                "path": "prompt_id",
+                "alias": "prompt_id"
+              },
+              {
+                "path": "session_id",
+                "alias": "session_id"
+              },
+              {
+                "path": "prompt",
+                "alias": "prompt"
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "prompt_id"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Show timeline for this prompt",
+                    "url": "/d/claude-code-prompt-timeline/claude-code-prompt-timeline?var-prompt_id=${__value.raw}&${__url_time_range}"
+                  }
+                ]
+              },
+              {
+                "id": "custom.width",
+                "value": 320
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "session_id"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 320
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "sortBy": [
+          {
+            "displayName": "Time",
+            "desc": true
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "type": "table",
+      "title": "Per-agent summary for prompt $prompt_id",
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 24,
+        "h": 6
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (actor) (count_over_time({service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "legendFormat": "calls"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (actor) (sum_over_time({service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap cost_usd [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "legendFormat": "cost"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (actor) (sum_over_time({service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap output_tokens [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "legendFormat": "output tokens"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (actor) (sum_over_time({service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap duration_ms [$__range]))",
+          "queryType": "instant",
+          "instant": true,
+          "legendFormat": "api time"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "joinByField",
+          "options": {
+            "byField": "actor",
+            "mode": "outer"
+          }
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true,
+              "Time 1": true,
+              "Time 2": true,
+              "Time 3": true,
+              "Time 4": true
+            },
+            "renameByName": {
+              "actor": "agent",
+              "Value #A": "API calls",
+              "Value #B": "Cost (USD)",
+              "Value #C": "Output tokens",
+              "Value #D": "Total API time"
+            }
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Cost (USD)"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 4
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Total API time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 3,
+      "type": "table",
+      "title": "Timeline for prompt $prompt_id (ordered by event sequence)",
+      "description": "Model calls carry the agent that made them. Tool events are not tagged with an agent by Claude Code, so they show '(not tagged)'; attribute them by position, or open the trace below for the exact tree. 'prompt / command' shows the prompt given to a subagent (Agent rows), the Bash command, or the user prompt; it needs OTEL_LOG_TOOL_DETAILS=1 and values are truncated at 512 characters. 'context tok' is the size of the context sent with a model call (input + cache read + cache write).",
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 18
+      },
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "maxLines": 5000,
+          "expr": "{service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?(user_prompt|api_request|api_error|tool_result)\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | label_format context_tokens=`{{ if .input_tokens }}{{ add .input_tokens .cache_read_tokens .cache_creation_tokens }}{{ end }}` | line_format \"{{ .tool_input }}\" | json subagent_prompt=\"prompt\", subagent_desc=\"description\", bash_cmd=\"command\" | drop __error__, __error_details__ | label_format detail=`{{ if .subagent_prompt }}[{{ .subagent_desc }}] {{ .subagent_prompt }}{{ else if .bash_cmd }}$ {{ .bash_cmd }}{{ else if .prompt }}{{ .prompt }}{{ end }}`"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "extractFields",
+          "options": {
+            "source": "labels",
+            "format": "json",
+            "replace": true,
+            "keepTime": true,
+            "jsonPaths": [
+              {
+                "path": "event_sequence",
+                "alias": "#"
+              },
+              {
+                "path": "actor",
+                "alias": "agent"
+              },
+              {
+                "path": "event_name",
+                "alias": "event"
+              },
+              {
+                "path": "model",
+                "alias": "model"
+              },
+              {
+                "path": "tool_name",
+                "alias": "tool"
+              },
+              {
+                "path": "detail",
+                "alias": "prompt / command"
+              },
+              {
+                "path": "duration_ms",
+                "alias": "duration"
+              },
+              {
+                "path": "context_tokens",
+                "alias": "context tok"
+              },
+              {
+                "path": "input_tokens",
+                "alias": "input tok"
+              },
+              {
+                "path": "cache_read_tokens",
+                "alias": "cache read tok"
+              },
+              {
+                "path": "cache_creation_tokens",
+                "alias": "cache write tok"
+              },
+              {
+                "path": "output_tokens",
+                "alias": "output tok"
+              },
+              {
+                "path": "cost_usd",
+                "alias": "cost"
+              },
+              {
+                "path": "success",
+                "alias": "ok"
+              },
+              {
+                "path": "query_source",
+                "alias": "query_source"
+              },
+              {
+                "path": "tool_use_id",
+                "alias": "tool_use_id"
+              }
+            ]
+          }
+        },
+        {
+          "id": "convertFieldType",
+          "options": {
+            "fields": {},
+            "conversions": [
+              {
+                "targetField": "#",
+                "destinationType": "number"
+              },
+              {
+                "targetField": "duration",
+                "destinationType": "number"
+              },
+              {
+                "targetField": "input tok",
+                "destinationType": "number"
+              },
+              {
+                "targetField": "cache read tok",
+                "destinationType": "number"
+              },
+              {
+                "targetField": "cache write tok",
+                "destinationType": "number"
+              },
+              {
+                "targetField": "output tok",
+                "destinationType": "number"
+              },
+              {
+                "targetField": "cost",
+                "destinationType": "number"
+              },
+              {
+                "targetField": "context tok",
+                "destinationType": "number"
+              }
+            ]
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "#",
+                "desc": false
+              }
+            ]
+          }
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [
+            {
+              "type": "value",
+              "options": {
+                "Not Found": {
+                  "text": " ",
+                  "index": 0
+                }
+              }
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "cost"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "currencyUSD"
+              },
+              {
+                "id": "decimals",
+                "value": 4
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "duration"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "agent"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "main": {
+                        "color": "blue",
+                        "index": 0
+                      },
+                      "user": {
+                        "color": "green",
+                        "index": 3
+                      },
+                      "(not tagged)": {
+                        "color": "text",
+                        "index": 1
+                      }
+                    }
+                  },
+                  {
+                    "type": "regex",
+                    "options": {
+                      "pattern": ".*",
+                      "result": {
+                        "color": "orange",
+                        "index": 2
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "prompt / command"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 420
+              },
+              {
+                "id": "custom.inspect",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "#"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 60
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Time"
+            },
+            "properties": [
+              {
+                "id": "custom.width",
+                "value": 190
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    },
+    {
+      "id": 4,
+      "type": "table",
+      "title": "Traces with subagents (click a trace for the call tree)",
+      "description": "Needs CLAUDE_CODE_ENHANCED_TELEMETRY_BETA=1 and OTEL_TRACES_EXPORTER=otlp. Subagent model and tool spans nest under the Agent tool span that started them.",
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 10
+      },
+      "datasource": {
+        "type": "tempo",
+        "uid": "tempo"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "tempo",
+            "uid": "tempo"
+          },
+          "queryType": "traceql",
+          "limit": 50,
+          "tableType": "traces",
+          "query": "{ resource.service.name = \"claude-code\" && span.tool_name = \"Agent\" }"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "traceID"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Open call tree",
+                    "targetBlank": true,
+                    "url": "/explore?schemaVersion=1&orgId=1&panes=%7B%22t%22%3A%7B%22datasource%22%3A%22tempo%22%2C%22queries%22%3A%5B%7B%22refId%22%3A%22A%22%2C%22datasource%22%3A%7B%22type%22%3A%22tempo%22%2C%22uid%22%3A%22tempo%22%7D%2C%22queryType%22%3A%22traceql%22%2C%22query%22%3A%22${__value.raw}%22%7D%5D%2C%22range%22%3A%7B%22from%22%3A%22now-7d%22%2C%22to%22%3A%22now%22%7D%7D%7D"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      }
+    }
+  ]
+}
