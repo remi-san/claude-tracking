@@ -132,6 +132,15 @@ Register the hook in `~/.claude/settings.json` so it runs in every repository: m
 }
 ```
 
+The `issue-cost-tracking` skill (`skills/issue-cost-tracking/SKILL.md`) tells agents the
+git workflow this relies on: issue number first in the branch name, end the turn on it, one
+issue per prompt, subagents on their own issue branch, reviews on `<PR branch>-code-review`.
+Link it into your user skills so it applies in every repository:
+
+```sh
+ln -s "$PWD/skills/issue-cost-tracking" ~/.claude/skills/issue-cost-tracking
+```
+
 To load prompts from before the hook, run `hooks/record-branch.py --backfill`: it reads the
 transcripts in `~/.claude/projects`, subagents included, then sends again, with the current
 time, every prompt and agent whose latest record in Loki differs from what the transcripts
