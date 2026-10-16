@@ -55,7 +55,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "last_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format issue_n=`{{ if .issue }}{{ .issue }}{{ else }}0{{ end }}` | unwrap issue_n [30d]) by (key, repo)",
+          "expr": "last_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format issue_n=`{{ if .issue }}{{ .issue }}{{ else }}0{{ end }}` | unwrap issue_n [30d]) by (key, repo) and on (key, repo) (max_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format ts=`{{ __timestamp__ | unixEpochMillis }}` | unwrap ts [30d]) by (key, repo) == on (key) group_left max by (key) (max_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format ts=`{{ __timestamp__ | unixEpochMillis }}` | unwrap ts [30d]) by (key, repo)))",
           "queryType": "instant",
           "instant": true,
           "legendFormat": "issue"
@@ -131,7 +131,7 @@
               "repo": "Repository",
               "Value #A (sum)": "Cost (USD)",
               "session_id (distinctCount)": "Sessions",
-              "key (count)": "Prompt \u00d7 agent"
+              "key (count)": "Prompt × agent"
             }
           }
         },
@@ -260,7 +260,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "last_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format issue_n=`{{ if .issue }}{{ .issue }}{{ else }}0{{ end }}` | unwrap issue_n [30d]) by (key, repo)",
+          "expr": "last_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format issue_n=`{{ if .issue }}{{ .issue }}{{ else }}0{{ end }}` | unwrap issue_n [30d]) by (key, repo) and on (key, repo) (max_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format ts=`{{ __timestamp__ | unixEpochMillis }}` | unwrap ts [30d]) by (key, repo) == on (key) group_left max by (key) (max_over_time({service_name=\"claude-code-branch\"} | json | prompt_id!=\"\" | label_format key=`{{ .prompt_id }}/{{ if .agent }}{{ .agent }}{{ else }}main{{ end }}` | label_format ts=`{{ __timestamp__ | unixEpochMillis }}` | unwrap ts [30d]) by (key, repo)))",
           "queryType": "instant",
           "instant": true,
           "legendFormat": "issue"
@@ -333,7 +333,7 @@
               "Value #B": "Issue",
               "repo": "Repository",
               "Value #A (sum)": "Cost (USD)",
-              "key (count)": "Prompt \u00d7 agent"
+              "key (count)": "Prompt × agent"
             }
           }
         },

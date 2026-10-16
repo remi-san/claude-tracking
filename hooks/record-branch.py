@@ -264,16 +264,21 @@ def correct(values):
     for _, l in values:  # in time order: the last one per key wins
         r = json.loads(l)
         want[(r["prompt_id"], r["agent"])] = r
+    # All records at each key's latest time: a backfill reuses the message timestamps, so an
+    # older record at the same time may be the one the dashboard keeps.
     have = {}
     for session in sorted({r["session_id"] for r in want.values()}):
         for t, r in query('{service_name="claude-code-branch"} |= "%s"' % session):  # newest first in each stream
             key = (r.get("prompt_id"), r.get("agent") or "")
-            if t > have.get(key, (0,))[0]:
-                have[key] = (t, r)
-    have = {key: r for key, (_, r) in have.items()}
+            latest = have.get(key, (0, []))
+            if t > latest[0]:
+                have[key] = (t, [r])
+            elif t == latest[0]:
+                latest[1].append(r)
+    have = {key: rs for key, (_, rs) in have.items()}
     fixed, now = [], time.time_ns()
     for key, r in want.items():
-        if any((have.get(key) or {}).get(k) != r.get(k) for k in ("repo", "branch", "issue", "via")):
+        if any(h.get(k) != r.get(k) for h in have.get(key) or [{}] for k in ("repo", "branch", "issue", "via")):
             fixed.append([str(now + len(fixed)), json.dumps(r)])
     for i in range(0, len(fixed), 500):
         push(fixed[i:i + 500], source="correct")
