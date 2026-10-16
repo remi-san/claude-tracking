@@ -55,7 +55,7 @@
             "uid": "loki"
           },
           "maxLines": 200,
-          "expr": "{service_name=\"claude-code\"} | event_name=~\"(claude_code\\\\.)?(user_prompt)\" | line_format \"{{.prompt}}\""
+          "expr": "{service_name=~\"claude-code|claude-code-desktop\"} | event_name=~\"(claude_code\\\\.)?(user_prompt)\" | line_format \"{{.prompt}}\""
         }
       ],
       "transformations": [
@@ -165,7 +165,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (actor) (count_over_time({service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` [$__range]))",
+          "expr": "sum by (actor) (count_over_time({service_name=~\"claude-code|claude-code-desktop\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` [$__range]))",
           "queryType": "instant",
           "instant": true,
           "legendFormat": "calls"
@@ -176,7 +176,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (actor) (sum_over_time({service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap cost_usd [$__range]))",
+          "expr": "sum by (actor) (sum_over_time({service_name=~\"claude-code|claude-code-desktop\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap cost_usd [$__range]))",
           "queryType": "instant",
           "instant": true,
           "legendFormat": "cost"
@@ -187,7 +187,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (actor) (sum_over_time({service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap output_tokens [$__range]))",
+          "expr": "sum by (actor) (sum_over_time({service_name=~\"claude-code|claude-code-desktop\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap output_tokens [$__range]))",
           "queryType": "instant",
           "instant": true,
           "legendFormat": "output tokens"
@@ -198,7 +198,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (actor) (sum_over_time({service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap duration_ms [$__range]))",
+          "expr": "sum by (actor) (sum_over_time({service_name=~\"claude-code|claude-code-desktop\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?api_request\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | unwrap duration_ms [$__range]))",
           "queryType": "instant",
           "instant": true,
           "legendFormat": "api time"
@@ -293,7 +293,7 @@
             "uid": "loki"
           },
           "maxLines": 5000,
-          "expr": "{service_name=\"claude-code\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?(user_prompt|api_request|api_error|tool_result)\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | label_format context_tokens=`{{ if .input_tokens }}{{ add .input_tokens .cache_read_tokens .cache_creation_tokens }}{{ end }}` | line_format \"{{ .tool_input }}\" | json subagent_prompt=\"prompt\", subagent_desc=\"description\", bash_cmd=\"command\" | drop __error__, __error_details__ | label_format detail=`{{ if .subagent_prompt }}[{{ .subagent_desc }}] {{ .subagent_prompt }}{{ else if .bash_cmd }}$ {{ .bash_cmd }}{{ else if .prompt }}{{ .prompt }}{{ end }}`"
+          "expr": "{service_name=~\"claude-code|claude-code-desktop\"} | prompt_id=\"$prompt_id\" | event_name=~\"(claude_code\\\\.)?(user_prompt|api_request|api_error|tool_result)\" | label_format actor=`{{ if .agent_name }}{{ .agent_name }}{{ else if or (eq .query_source \"repl_main_thread\") (eq .query_source \"sdk\") }}main{{ else if .query_source }}{{ .query_source }}{{ else if eq .event_name \"user_prompt\" }}user{{ else }}(not tagged){{ end }}` | label_format context_tokens=`{{ if .input_tokens }}{{ add .input_tokens .cache_read_tokens .cache_creation_tokens }}{{ end }}` | line_format \"{{ .tool_input }}\" | json subagent_prompt=\"prompt\", subagent_desc=\"description\", bash_cmd=\"command\" | drop __error__, __error_details__ | label_format detail=`{{ if .subagent_prompt }}[{{ .subagent_desc }}] {{ .subagent_prompt }}{{ else if .bash_cmd }}$ {{ .bash_cmd }}{{ else if .prompt }}{{ .prompt }}{{ end }}`"
         }
       ],
       "transformations": [

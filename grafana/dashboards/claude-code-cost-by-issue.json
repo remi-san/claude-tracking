@@ -44,7 +44,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (key, session_id) (sum_over_time({service_name=\"claude-code\"} | event_name=~\"(claude_code\\\\.)?api_request\" | label_format key=`{{ .prompt_id }}/{{ if .agent_name }}{{ .agent_name }}{{ else }}main{{ end }}` | unwrap cost_usd [$__range]))",
+          "expr": "sum by (key, session_id) (sum_over_time({service_name=~\"claude-code|claude-code-desktop\"} | event_name=~\"(claude_code\\\\.)?api_request\" | label_format key=`{{ .prompt_id }}/{{ if .agent_name }}{{ .agent_name }}{{ else }}main{{ end }}` | unwrap cost_usd [$__range]))",
           "queryType": "instant",
           "instant": true,
           "legendFormat": "cost"
@@ -249,7 +249,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (key, session_id) (sum_over_time({service_name=\"claude-code\"} | event_name=~\"(claude_code\\\\.)?api_request\" | label_format key=`{{ .prompt_id }}/{{ if .agent_name }}{{ .agent_name }}{{ else }}main{{ end }}` | unwrap cost_usd [$__range]))",
+          "expr": "sum by (key, session_id) (sum_over_time({service_name=~\"claude-code|claude-code-desktop\"} | event_name=~\"(claude_code\\\\.)?api_request\" | label_format key=`{{ .prompt_id }}/{{ if .agent_name }}{{ .agent_name }}{{ else }}main{{ end }}` | unwrap cost_usd [$__range]))",
           "queryType": "instant",
           "instant": true,
           "legendFormat": "cost"

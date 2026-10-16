@@ -155,6 +155,8 @@ the model on that call. The "Context window" row charts it for each session's ma
 
 ## Notes
 
+- Sessions run from the Claude desktop app report as `service_name="claude-code-desktop"`,
+  the CLI as `claude-code`: the dashboards' Loki queries match both.
 - Retention: 90 days (Prometheus, Loki and Tempo).
 - Totals use `max_over_time` per session series, so a session that started before the
   selected time range is counted in full.
