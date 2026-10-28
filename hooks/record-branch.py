@@ -47,8 +47,9 @@ from datetime import datetime
 
 LOKI = os.environ.get("CLAUDE_BRANCH_LOKI_URL", "http://localhost:3100")
 STREAM = {"service_name": "claude-code-branch"}
-# First number standing alone in a path segment: 123-fix, feat/123-foo, issue-123, gh-123, fix_123
-ISSUE_RE = re.compile(r"(?:^|[/_#-])(\d+)(?=$|[/_-])")
+# First number standing alone in a path segment: 123-fix, feat/123-foo, issue-123, gh-123, fix_123.
+# A run of numbers joined by dashes is a version or a date, not an issue: node-24-22-1, 2026-10-28.
+ISSUE_RE = re.compile(r"(?:^|[/_#-])(?<!\d-)(\d+)(?=$|[/_]|-(?!\d))")
 # A subagent named in a main-thread message, as raw transcript JSON: the Agent tool's result,
 # a SendMessage to it, its hand-back, its task notification.
 AGENT_REF_RE = re.compile(r'agentId: (a[0-9a-f]{16})\b|"to": ?"(a[0-9a-f]{16})"|<agent-message from=\\?"(a[0-9a-f]{16})|<task-id>(a[0-9a-f]{16})</task-id>')

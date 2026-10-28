@@ -75,8 +75,10 @@ Claude Code's telemetry has no git branch, so `hooks/record-branch.py` records i
   from, when they all agree on one; the record names the subagent in `via`.
 
 The issue is the first number in the branch name (`123-fix`, `feat/123-foo`, `issue-123`,
-`gh-123`). A branch without one (`claude/keep-agent-worktrees`) gets the lowest-numbered
-issue its GitHub pull request closes, looked up with `gh`; a reviewer's branch named
+`gh-123`). Numbers joined by dashes are a version or a date, never an issue:
+`deps-node-24-22-1` and `2026-10-28-fix` have none (nor does `123-2-fix`). A branch without
+one (`claude/keep-agent-worktrees`) gets the lowest-numbered issue its GitHub pull request
+closes, looked up with `gh`; a reviewer's branch named
 `<PR branch>-code-review` (any `-<word>-review` suffix, optionally followed by a `-<n>` that
 is not read as an issue, as in `<PR branch>-code-review-2`) gets its PR's issue (cached in
 `~/.cache/claude-code-branch-issues.json`; a branch with no PR yet is asked again after 10

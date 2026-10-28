@@ -14,8 +14,10 @@ ends on `main`, on a detached HEAD, or on a branch with no issue is charged to "
 
 1. **Put the issue number in the branch name, first.** `123-fix-login`, `feat/123-login`,
    `issue-123`, `gh-123`. The issue is the first number standing alone between `/`, `-`,
-   `_` or the ends of the name, so keep any other number after it: not `2026-10-123-fix`
-   (read as 2026) or `fix123` (no separator, no issue).
+   `_` or the ends of the name, so keep any other number after it: not `fix123` (no
+   separator, no issue). Numbers joined by dashes are skipped as a version or a date:
+   `deps-node-24-22-1` and `2026-10-123-fix` give no issue, so don't join the issue number
+   to another one (`123-2-fix`).
 2. **Create the branch before doing the work**, at the start of the prompt:
    `git switch -c 123-fix-login` (or `git branch -m 123-fix-login` to rename the branch
    you are on). Work done before it is charged to the previous branch.
