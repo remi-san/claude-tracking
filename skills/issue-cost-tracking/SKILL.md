@@ -20,7 +20,10 @@ ends on `main`, on a detached HEAD, or on a branch with no issue is charged to "
    to another one (`123-2-fix`).
 2. **Create the branch before doing the work**, at the start of the prompt:
    `git switch -c 123-fix-login` (or `git branch -m 123-fix-login` to rename the branch
-   you are on). Work done before it is charged to the previous branch.
+   you are on). A prompt is charged to the branch it ends on (rule 4), so work done earlier
+   in the same prompt still counts on the new branch; but a prompt that ends before the
+   branch exists (a question to the user, an interruption, an error) is charged to the
+   previous one.
 3. **End the turn on the issue branch.** The main thread's record is its branch at the end
    of the turn. Don't switch back to `main` in the same turn after working on an issue
    (e.g. after merging): do that at the start of the next prompt instead.
